@@ -4,21 +4,53 @@ namespace App\Tests\Security;
 
 use App\Entity\User;
 use App\Security\GithubUserProvider;
+use GuzzleHttp\Client;
+use JMS\Serializer\SerializerInterface;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
+//use Psr\Http\Message\StreamInterface;
 
 class GithubUserProviderTest extends TestCase
 {
-    public function testLoadUserByUsernameThatReturnAUser()
+    private MockObject | Client | null $client;
+    private MockObject | SerializerInterface | null $serializer;
+    //private MockObject | StreamInterface | null $streamedResponse;
+    private MockObject | ResponseInterface | null $response;
+
+    public function setup(): void
     {
-        /** @var \GuzzleHttp\Client&\PHPUnit\Framework\MockObject\MockObject $client */
-        $client = $this->getMockBuilder('GuzzleHttp\Client')
+        $this->client = $this->getMockBuilder('GuzzleHttp\Client')
             ->disableOriginalConstructor()
             ->getMock();
 
-        /** @var \JMS\Serializer\SerializerInterface&\PHPUnit\Framework\MockObject\MockObject $serializer */
-        $serializer = $this->getMockBuilder('JMS\Serializer\SerializerInterface')
+        $this->serializer = $this->getMockBuilder('JMS\Serializer\SerializerInterface')
             ->disableOriginalConstructor()
             ->getMock();
+
+        // $this->streamedResponse = $this->getMockBuilder('Psr\Http\Message\StreamInterface')
+        //     ->getMock();
+
+        $this->response = $this->getMockBuilder('Psr\Http\Message\ResponseInterface')
+            ->getMock();
+    }
+
+    public function tearDown(): void
+    {
+        $this->client = null;
+        $this->serializer = null;
+        // $this->streamedResponse = null;    
+        $this->response = null;
+    }
+
+    public function testLoadUserByUsernameThatReturnAUser()
+    {
+        // $this->streamedResponse->expects($this->once())->method('getContents')->willReturn('foo');
+
+        //$this->response->expects($this->once())->method('getBody')->willReturn($this->streamedResponse);
+
+        $this->client->expects($this->once())->method('get')->willReturn($this->response);
+
         $userData = [
             'login' => 'a login',
             'name' => 'a username',
@@ -26,19 +58,9 @@ class GithubUserProviderTest extends TestCase
             'avatar_url' => 'https://avatar.url.com',
             'html_url' => 'https://profile.url.com'
         ];
-        $serializer->expects($this->once())->method('deserialize')->willReturn($userData);
+        $this->serializer->expects($this->once())->method('deserialize')->willReturn($userData);
 
-        // $streamedResponse = $this->getMockBuilder('Psr\Http\Message\StreamInterface')
-        //     ->getMock();
-        // $streamedResponse->method('getContents')->willReturn('foo');
-
-        $response = $this->getMockBuilder('Psr\Http\Message\ResponseInterface')
-            ->getMock();
-        //$response->method('getBody')->willReturn($streamedResponse);
-
-        $client->expects($this->once())->method('get')->willReturn($response);
-
-        $githubUserProvider = new GithubUserProvider($client, $serializer);
+        $githubUserProvider = new GithubUserProvider($this->client, $this->serializer);
 
         $user = $githubUserProvider->loadUserByUsername('a_user_access_token');
         $expectedUser = new User($userData['login'], $userData['name'], $userData['email'], $userData['avatar_url'], $userData['html_url']);
@@ -49,30 +71,16 @@ class GithubUserProviderTest extends TestCase
 
     public function testLoadUserByUsernameThatThrowAnException()
     {
-        /** @var \GuzzleHttp\Client&\PHPUnit\Framework\MockObject\MockObject $client */
-        $client = $this->getMockBuilder('GuzzleHttp\Client')
-            ->disableOriginalConstructor()
-            ->getMock();
+        // $this->streamedResponse->method('getContents')->willReturn('foo');
 
-        /** @var \JMS\Serializer\SerializerInterface&\PHPUnit\Framework\MockObject\MockObject $serializer */
-        $serializer = $this->getMockBuilder('JMS\Serializer\SerializerInterface')
-            ->disableOriginalConstructor()
-            ->getMock();
-        $serializer->expects($this->once())->method('deserialize')->willReturn([]);
+        //$this->response->method('getBody')->willReturn($this->streamedResponse);
 
-        // $streamedResponse = $this->getMockBuilder('Psr\Http\Message\StreamInterface')
-        //     ->getMock();
-        // $streamedResponse->method('getContents')->willReturn('foo');
+        $this->client->expects($this->once())->method('get')->willReturn($this->response);
 
-        $response = $this->getMockBuilder('Psr\Http\Message\ResponseInterface')
-            ->getMock();
-        //$response->method('getBody')->willReturn($streamedResponse);
-
-        $client->expects($this->once())->method('get')->willReturn($response);
+        $this->serializer->expects($this->once())->method('deserialize')->willReturn([]);
 
         $this->expectException('LogicException');
-
-        $githubUserProvider = new GithubUserProvider($client, $serializer);
+        $githubUserProvider = new GithubUserProvider($this->client, $this->serializer);
         $githubUserProvider->loadUserByUsername('a_user_access_token');
     }
 }
