@@ -6,7 +6,7 @@
 
 # Ajouts
 
-Le but de ce projet est d'écrire et de faire passer des tests unitaires dans une application Symfony existante à l'aide de PHPUnit.
+Le but de ce projet est d'écrire et de faire passer des tests unitaires dans une application Symfony existante (disponible [ici](https://github.com/OpenClassrooms-Student-Center/4087056-testez-unitairement-votre-application-symfony-php)) à l'aide de PHPUnit.
 
 C'est principalement la méthode de connexion au compte GitHub qui a été testée et une classe Produit.
 
